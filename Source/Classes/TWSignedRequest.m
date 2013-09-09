@@ -36,14 +36,13 @@
 
 #define REQUEST_TIMEOUT_INTERVAL 8
 
-static NSString *gTWConsumerKey;
-static NSString *gTWConsumerSecret;
-
 @interface TWSignedRequest()
 {
     NSURL *_url;
     NSDictionary *_parameters;
     TWSignedRequestMethod _signedRequestMethod;
+    NSString *_consumerKey;
+    NSString *_consumerSecret;
 }
 
 - (NSURLRequest *)_buildRequest;
@@ -54,13 +53,15 @@ static NSString *gTWConsumerSecret;
 @synthesize authToken = _authToken;
 @synthesize authTokenSecret = _authTokenSecret;
 
-- (id)initWithURL:(NSURL *)url parameters:(NSDictionary *)parameters requestMethod:(TWSignedRequestMethod)requestMethod
+- (id)initWithURL:(NSURL *)url parameters:(NSDictionary *)parameters requestMethod:(TWSignedRequestMethod)requestMethod consumerKey:(NSString *)consumerKey consumerSecret:(NSString *)consumerSecret
 {
     self = [super init];
     if (self) {
         _url = url;
         _parameters = parameters;
         _signedRequestMethod = requestMethod;
+        _consumerKey = consumerKey;
+        _consumerSecret = consumerSecret;
     }
     return self;
 }
@@ -90,7 +91,7 @@ static NSString *gTWConsumerSecret;
 
     //  Create the authorization header and attach to our request
     NSData *bodyData = [paramsAsString dataUsingEncoding:NSUTF8StringEncoding];
-    NSString *authorizationHeader = OAuthorizationHeader(_url, method, bodyData, [TWSignedRequest consumerKey], [TWSignedRequest consumerSecret], _authToken, _authTokenSecret);
+    NSString *authorizationHeader = OAuthorizationHeader(_url, method, bodyData, _consumerKey, _consumerSecret, _authToken, _authTokenSecret);
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:_url];
     [request setTimeoutInterval:REQUEST_TIMEOUT_INTERVAL];
     [request setHTTPMethod:method];
@@ -108,28 +109,6 @@ static NSString *gTWConsumerSecret;
         NSData *data = [NSURLConnection sendSynchronousRequest:[self _buildRequest] returningResponse:&response error:&error];
         handler(data, response, error);
     });
-}
-
-// OBFUSCATE YOUR KEYS!
-+ (NSString *)consumerKey
-{
-    if (!gTWConsumerKey) {
-        NSBundle* bundle = [NSBundle mainBundle];
-        gTWConsumerKey = bundle.infoDictionary[TW_CONSUMER_KEY];
-    }
-
-    return gTWConsumerKey;
-}
-
-// OBFUSCATE YOUR KEYS!
-+ (NSString *)consumerSecret
-{
-    if (!gTWConsumerSecret) {
-        NSBundle* bundle = [NSBundle mainBundle];
-        gTWConsumerSecret = bundle.infoDictionary[TW_CONSUMER_SECRET];
-    }
-
-    return gTWConsumerSecret;
 }
 
 @end
